@@ -57,6 +57,8 @@ describe("raffle", () => {
     const account = await token.createAssociatedTokenAccount(payer.publicKey);
     await token.mintTo(account, payer, [], 100);
 
+    tokenMint = token.publicKey;
+
     console.log({
       tokenMint: token.publicKey.toBase58(),
       account: account.toBase58(),
@@ -102,6 +104,11 @@ describe("raffle", () => {
       program.programId
     );
 
+    console.log({
+      rafflePDA: rafflePDA.toBase58(),
+      tokenMint: tokenMint.toBase58(),
+    });
+
     await program.rpc.createRaffle(
       "Raffle 1",
       "valid-Url_afert",
@@ -122,16 +129,12 @@ describe("raffle", () => {
       }
     );
 
-    console.log({
-      rafflePDA: rafflePDA.toBase58(),
-    });
-
     const raffleAccount = await program.account.raffle.fetch(rafflePDA);
 
     assert.equal(raffleAccount.name, "Raffle 1");
   });
 
-  it("Buy ticket", async () => {
+  it.skip("Buy ticket", async () => {
     const [rafflePDA] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode("raffle"),
