@@ -57,7 +57,7 @@ pub mod raffle {
         let tickets = &mut ctx.accounts.tickets;
         let token = &mut ctx.accounts.token_account;
 
-        //Transfer tokens into the bank
+        // Transfer tokens into the bank
         {
             let cpi_ctx = CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
