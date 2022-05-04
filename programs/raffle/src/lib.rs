@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{clock, program_option::COption, sysvar};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{self, Mint, Token, TokenAccount},
+    token::{self, Mint, Token, TokenAccount, Transfer},
 };
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
@@ -10,6 +10,20 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 #[program]
 pub mod raffle {
     use super::*;
+
+    impl<'info> BuyTickets<'info> {
+        fn transfer_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+            CpiContext::new(
+                self.token_program.to_account_info(),
+                Transfer {
+                    from: self.token_account.to_account_info(),
+                    to: self.bank_box.to_account_info(),
+                    authority: self.payer.to_account_info(),
+                },
+            )
+        }
+    }
+
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         Ok(())
     }
@@ -57,27 +71,20 @@ pub mod raffle {
         let tickets = &mut ctx.accounts.tickets;
         let token = &mut ctx.accounts.token_account;
 
-        // Transfer tokens into the bank
-        {
-            let cpi_ctx = CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
-                token::Transfer {
-                    from: ctx.accounts.token_account.to_account_info(),
-                    to: ctx.accounts.bank.to_account_info(),
-                    authority: ctx.accounts.payer.to_account_info(),
-                },
-            );
-            token::transfer(cpi_ctx, amount)?;
-        }
         tickets.bump = *ctx.bumps.get("tickets").unwrap();
         // let _ = *ctx.bumps.get("token_to_raffle").unwrap();
         tickets.amount = amount;
+
+        let price = amount * raffle.raffle_price;
 
         msg!(
             "gl you bought: {} tickets for the raffle: {}",
             amount,
             raffle.name
         );
+
+        token::transfer(ctx.accounts.transfer_ctx(), price)?;
+
         Ok(())
     }
 }
@@ -155,7 +162,7 @@ pub struct BuyTickets<'info> {
 
     // bank
     #[account(mut)]
-    pub bank: Box<Account<'info, TokenAccount>>,
+    pub bank: Box<Account<'info, Bank>>,
 
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -170,6 +177,16 @@ pub struct BuyTickets<'info> {
     space = 8 + std::mem::size_of::<Tickets>())]
     pub tickets: Account<'info, Tickets>,
 
+    // #[account(init_if_needed, seeds = [
+    //     b"bank_box".as_ref(),
+    //     bank.key().as_ref(),
+    //     raffle.token_mint.key().as_ref(),
+    // ],
+    // bump,
+    // payer = payer, space = 8)]
+    #[account(mut)]
+    pub bank_box: Box<Account<'info, TokenAccount>>,
+
     // the token account of the user
     // #[account(mut, seeds = [
     //     b"token_to_raffle".as_ref(),
@@ -177,10 +194,10 @@ pub struct BuyTickets<'info> {
     //     tickets.key().as_ref(),
     // ],
     // bump)]
+    #[account(mut)]
     pub token_account: Box<Account<'info, TokenAccount>>,
 
     // Misc.
-    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,

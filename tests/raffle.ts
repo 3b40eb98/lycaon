@@ -11,8 +11,12 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import chai, { assert, expect } from "chai";
-import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
+import {
+  AccountLayout,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  Token,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 
 describe("raffle", () => {
   // Configure the client to use the local cluster.
@@ -44,6 +48,7 @@ describe("raffle", () => {
   });
 
   let tokenMint: PublicKey;
+  let bankAcc: PublicKey;
 
   before("create mint token", async () => {
     const token = await Token.createMint(
@@ -55,6 +60,7 @@ describe("raffle", () => {
       TOKEN_PROGRAM_ID
     );
     const account = await token.createAssociatedTokenAccount(payer.publicKey);
+    bankAcc = await token.createAssociatedTokenAccount(bank.publicKey);
     await token.mintTo(account, payer, [], 100);
 
     tokenMint = token.publicKey;
@@ -62,6 +68,7 @@ describe("raffle", () => {
     console.log({
       tokenMint: token.publicKey.toBase58(),
       account: account.toBase58(),
+      bankAcc: bankAcc.toBase58(),
     });
   });
 
@@ -134,7 +141,7 @@ describe("raffle", () => {
     assert.equal(raffleAccount.name, "Raffle 1");
   });
 
-  it.skip("Buy ticket", async () => {
+  it("Buy ticket", async () => {
     const [rafflePDA] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode("raffle"),
@@ -196,27 +203,49 @@ describe("raffle", () => {
       bank.publicKey
     );
 
+    const [findBankPDA, ____] = await PublicKey.findProgramAddress(
+      [Buffer.from("bank_box")],
+      program.programId
+    );
+
     console.log({
       rafflePDA: rafflePDA.toBase58(),
       ticketPDA: ticketPDA.toBase58(),
       tokenAccountPDA: tokenAccountPDA.toBase58(),
       tokenAccount: tokenAccount.toBase58(),
       tokenAccountB: tokenAccountB.toBase58(),
+      findBankPDA: findBankPDA.toBase58(),
     });
 
-    await program.rpc.buyTickets(new BN(1), {
+    // const [bankBoxPDA] = await PublicKey.findProgramAddress(
+    //   [Buffer.from("bank_box"), bank.publicKey.toBytes(), tokenMint.toBytes()],
+    //   program.programId
+    // );
+
+    await program.rpc.buyTickets(new BN(2), {
       accounts: {
-        bank: tokenAccountB,
+        bank: bank.publicKey,
+        bankBox: bankAcc,
         raffle: rafflePDA,
         tickets: ticketPDA,
         tokenAccount: tokenAccount,
         payer: payer.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       },
       signers: [payer],
     });
+
+    const tickets = await program.account.tickets.fetch(ticketPDA);
+
+    console.log({
+      tickets,
+    });
+
+    console.log(
+      "receiver token balance: ",
+      await program.provider.connection.getTokenAccountBalance(bankAcc)
+    );
   });
 });
