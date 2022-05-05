@@ -180,15 +180,6 @@ describe("raffle", () => {
       program.programId
     );
 
-    const [tokenAccountPDA, ___] = await PublicKey.findProgramAddress(
-      [
-        anchor.utils.bytes.utf8.encode("token_to_raffle"),
-        rafflePDA.toBuffer(),
-        ticketPDA.toBuffer(),
-      ],
-      program.programId
-    );
-
     const tokenAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
@@ -196,31 +187,11 @@ describe("raffle", () => {
       payer.publicKey
     );
 
-    const tokenAccountB = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenMint,
-      bank.publicKey
-    );
-
-    const [findBankPDA, ____] = await PublicKey.findProgramAddress(
-      [Buffer.from("bank_box")],
-      program.programId
-    );
-
     console.log({
       rafflePDA: rafflePDA.toBase58(),
       ticketPDA: ticketPDA.toBase58(),
-      tokenAccountPDA: tokenAccountPDA.toBase58(),
       tokenAccount: tokenAccount.toBase58(),
-      tokenAccountB: tokenAccountB.toBase58(),
-      findBankPDA: findBankPDA.toBase58(),
     });
-
-    // const [bankBoxPDA] = await PublicKey.findProgramAddress(
-    //   [Buffer.from("bank_box"), bank.publicKey.toBytes(), tokenMint.toBytes()],
-    //   program.programId
-    // );
 
     await program.rpc.buyTickets(new BN(2), {
       accounts: {
