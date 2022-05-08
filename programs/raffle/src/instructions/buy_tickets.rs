@@ -38,7 +38,6 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
 }
 
 #[derive(Accounts)]
-#[instruction(bump_auth: u8)]
 pub struct BuyTickets<'info> {
   #[account(mut)]
   pub raffle: Box<Account<'info, Raffle>>,
