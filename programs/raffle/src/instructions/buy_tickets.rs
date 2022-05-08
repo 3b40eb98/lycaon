@@ -38,6 +38,7 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
 }
 
 #[derive(Accounts)]
+#[instruction(bump_auth: u8)]
 pub struct BuyTickets<'info> {
   #[account(mut)]
   pub raffle: Box<Account<'info, Raffle>>,
@@ -59,24 +60,10 @@ pub struct BuyTickets<'info> {
     space = 8 + std::mem::size_of::<Tickets>())]
   pub tickets: Account<'info, Tickets>,
 
-  // #[account(init_if_needed, seeds = [
-  //     b"bank_box".as_ref(),
-  //     bank.key().as_ref(),
-  //     raffle.token_mint.key().as_ref(),
-  // ],
-  // bump,
-  // payer = payer, space = 8)]
   #[account(mut)]
   pub bank_box: Box<Account<'info, TokenAccount>>,
 
-  // the token account of the user
-  // #[account(mut, seeds = [
-  //     b"token_to_raffle".as_ref(),
-  //     raffle.key().as_ref(),
-  //     tickets.key().as_ref(),
-  // ],
-  // bump)]
-  #[account(mut)]
+  #[account(mut, constraint = token_account.mint == raffle.token_mint)]
   pub token_account: Box<Account<'info, TokenAccount>>,
 
   // Misc.

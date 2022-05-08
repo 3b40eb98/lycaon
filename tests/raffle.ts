@@ -48,7 +48,9 @@ describe("raffle", () => {
   });
 
   let tokenMint: PublicKey;
+  let tokenMint2: PublicKey;
   let bankAcc: PublicKey;
+  let bankAcc2: PublicKey;
 
   before("create mint token", async () => {
     const token = await Token.createMint(
@@ -59,11 +61,25 @@ describe("raffle", () => {
       0,
       TOKEN_PROGRAM_ID
     );
+
+    const token2 = await Token.createMint(
+      connection,
+      payer,
+      payer.publicKey,
+      payer.publicKey,
+      0,
+      TOKEN_PROGRAM_ID
+    );
+
     const account = await token.createAssociatedTokenAccount(payer.publicKey);
+    const account2 = await token2.createAssociatedTokenAccount(payer.publicKey);
     bankAcc = await token.createAssociatedTokenAccount(bank.publicKey);
+    bankAcc2 = await token2.createAssociatedTokenAccount(bank.publicKey);
     await token.mintTo(account, payer, [], 100);
+    await token2.mintTo(account2, payer, [], 100);
 
     tokenMint = token.publicKey;
+    tokenMint2 = token2.publicKey;
 
     console.log({
       tokenMint: token.publicKey.toBase58(),
@@ -191,9 +207,10 @@ describe("raffle", () => {
       rafflePDA: rafflePDA.toBase58(),
       ticketPDA: ticketPDA.toBase58(),
       tokenAccount: tokenAccount.toBase58(),
+      bank: bank.publicKey.toBase58(),
     });
 
-    await program.rpc.buyTickets(new BN(2), {
+    await program.rpc.buyTickets(new BN(1), {
       accounts: {
         bank: bank.publicKey,
         bankBox: bankAcc,
@@ -218,5 +235,84 @@ describe("raffle", () => {
       "receiver token balance: ",
       await program.provider.connection.getTokenAccountBalance(bankAcc)
     );
+  });
+
+  it("Buy ticket with wrong token", async () => {
+    const [rafflePDA] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode("raffle"),
+        bank.publicKey.toBuffer(),
+        payer.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
+    await program.rpc.createRaffle(
+      "Raffle 3",
+      "valid-Url_afert",
+      new BN(1),
+      new BN(1650605069),
+      new BN(1650605069),
+      new BN(10),
+      {
+        accounts: {
+          bank: bank.publicKey,
+          raffle: rafflePDA,
+          tokenMint: tokenMint,
+          payer: payer.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        },
+        signers: [payer],
+      }
+    );
+
+    const raffleAccounts = await program.account.raffle.fetch(rafflePDA);
+
+    console.log({
+      raffleAccounts,
+    });
+
+    // const [ticketPDA, _] = await PublicKey.findProgramAddress(
+    //   [
+    //     anchor.utils.bytes.utf8.encode("tickets"),
+    //     rafflePDA.toBuffer(),
+    //     payer.publicKey.toBuffer(),
+    //   ],
+    //   program.programId
+    // );
+
+    // const tokenAccount = await Token.getAssociatedTokenAddress(
+    //   ASSOCIATED_TOKEN_PROGRAM_ID,
+    //   TOKEN_PROGRAM_ID,
+    //   tokenMint2,
+    //   payer.publicKey
+    // );
+
+    // try {
+    //   await program.rpc.buyTickets(new BN(1), {
+    //     accounts: {
+    //       bank: bank.publicKey,
+    //       bankBox: bankAcc2,
+    //       raffle: rafflePDA,
+    //       tickets: ticketPDA,
+    //       tokenAccount: tokenAccount,
+    //       payer: payer.publicKey,
+    //       tokenProgram: TOKEN_PROGRAM_ID,
+    //       systemProgram: SystemProgram.programId,
+    //       rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+    //     },
+    //     signers: [payer],
+    //   });
+    // } catch (error) {
+    //   console.log({
+    //     error,
+    //   });
+    //   // assert.equal(
+    //   //   error.msg,
+    //   //   "AnchorError caused by account: token_account. Error Code: ConstraintRaw. Error Number: 2003. Error Message: A raw constraint was violated."
+    //   // );
+    //   return;
+    // }
   });
 });
