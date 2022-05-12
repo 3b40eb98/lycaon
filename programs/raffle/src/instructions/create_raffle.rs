@@ -26,7 +26,6 @@ pub fn handler(
   raffle.token_mint = ctx.accounts.token_mint.key();
   raffle.bank = bank.key();
   raffle.raffle_price = raffle_price;
-  raffle.bump = *ctx.bumps.get("raffle").unwrap();
 
   Ok(())
 }
@@ -36,12 +35,7 @@ pub struct CreateRaffle<'info> {
   #[account(mut)]
   pub bank: Box<Account<'info, Bank>>,
 
-  #[account(init_if_needed, seeds = [
-            b"raffle".as_ref(),
-            bank.key().as_ref(),
-            payer.key().as_ref(),
-        ],
-        bump,
+  #[account(init,
         payer = payer,
         space = 8 + std::mem::size_of::<Raffle>())]
   pub raffle: Account<'info, Raffle>,
