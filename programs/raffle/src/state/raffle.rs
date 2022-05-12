@@ -12,8 +12,6 @@ pub struct Raffle {
 
   pub bank: Pubkey,
 
-  pub bump: u8,
-
   pub token_mint: Pubkey,
   pub start_date_timestamps: i64,
   pub end_date_timestamps: i64,
