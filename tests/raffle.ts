@@ -2,21 +2,14 @@ import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { Raffle } from "../target/types/raffle";
 import { BN } from "@project-serum/anchor";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { assert } from "chai";
 import {
-  Connection,
-  Keypair,
-  PublicKey,
-  sendAndConfirmTransaction,
-  SystemProgram,
-  Transaction,
-} from "@solana/web3.js";
-import chai, { assert, expect } from "chai";
-import {
-  AccountLayout,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   Token,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { creatMintToken, fundATA } from "./utils";
 
 describe("raffle", () => {
   const provider = anchor.getProvider();
@@ -29,7 +22,10 @@ describe("raffle", () => {
 
   const payer = anchor.web3.Keypair.generate();
   const bank = anchor.web3.Keypair.generate();
-  const mint = new PublicKey("C4VW9CKc8mPBMmJsqDpTF24TwYpbLW1aTzhRevMfWUXi");
+
+  let tokenMint: PublicKey;
+  let tokenAcc: PublicKey;
+  let bankAcc: PublicKey;
 
   before("fund wallet", async () => {
     const bankFund = await program.provider.connection.requestAirdrop(
@@ -45,37 +41,17 @@ describe("raffle", () => {
     await program.provider.connection.confirmTransaction(payerFund);
   });
 
-  let tokenMint: PublicKey;
-  let bankAcc: PublicKey;
-
   before("create mint token", async () => {
-    const token = await Token.createMint(
-      connection,
-      payer,
-      payer.publicKey,
-      payer.publicKey,
-      0,
-      TOKEN_PROGRAM_ID
-    );
+    const token = await creatMintToken(connection, payer);
 
-    const token2 = await Token.createMint(
-      connection,
-      payer,
-      payer.publicKey,
-      payer.publicKey,
-      0,
-      TOKEN_PROGRAM_ID
-    );
-
-    const account = await token.createAssociatedTokenAccount(payer.publicKey);
-    bankAcc = await token.createAssociatedTokenAccount(bank.publicKey);
-    await token.mintTo(account, payer, [], 10000);
+    tokenAcc = await fundATA(token, payer, payer.publicKey, 10000);
+    bankAcc = await fundATA(token, payer, bank.publicKey, 0);
 
     tokenMint = token.publicKey;
 
     console.log({
       tokenMint: token.publicKey.toBase58(),
-      account: account.toBase58(),
+      tokenAcc: token.publicKey.toBase58(),
       bankAcc: bankAcc.toBase58(),
     });
   });
@@ -115,7 +91,7 @@ describe("raffle", () => {
 
     await program.rpc.createRaffle(
       "Raffle 1",
-      "valid-Url_afert",
+      "url.com",
       new BN(1),
       new BN(1650605069),
       new BN(1650605069),
@@ -135,7 +111,7 @@ describe("raffle", () => {
 
     await program.rpc.createRaffle(
       "Raffle 2",
-      "valid-Url_afert",
+      "url.com",
       new BN(1),
       new BN(1650605069),
       new BN(1650605069),
@@ -164,13 +140,11 @@ describe("raffle", () => {
   });
 
   it("Buy ticket", async () => {
-    // if PDA exists so u should assume that pda already bought the tickets to raffle then just updated to the new one
-
     const raffle = anchor.web3.Keypair.generate();
 
     await program.rpc.createRaffle(
       "Raffle-to-buy",
-      "valid-Url_afert",
+      "url.com",
       new BN(1),
       new BN(1650605069),
       new BN(1650605069),
@@ -197,17 +171,9 @@ describe("raffle", () => {
       program.programId
     );
 
-    const tokenAccount = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenMint,
-      payer.publicKey
-    );
-
     console.log({
       raffle: raffle.publicKey.toBase58(),
       ticketPDA: ticketPDA.toBase58(),
-      tokenAccount: tokenAccount.toBase58(),
       bank: bank.publicKey.toBase58(),
     });
 
@@ -217,7 +183,7 @@ describe("raffle", () => {
         bankBox: bankAcc,
         raffle: raffle.publicKey,
         tickets: ticketPDA,
-        tokenAccount: tokenAccount,
+        tokenAccount: tokenAcc,
         payer: payer.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
@@ -243,7 +209,7 @@ describe("raffle", () => {
         bankBox: bankAcc,
         raffle: raffle.publicKey,
         tickets: ticketPDA,
-        tokenAccount: tokenAccount,
+        tokenAccount: tokenAcc,
         payer: payer.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
@@ -262,21 +228,17 @@ describe("raffle", () => {
       "receiver token balance: ",
       await program.provider.connection.getTokenAccountBalance(bankAcc)
     );
+
+    assert.equal(tickets.amount.toNumber(), 1);
+    assert.equal(ticketsRefetch.amount.toNumber(), 6);
   });
 
-  it.skip("Buy ticket with wrong token", async () => {
-    const [rafflePDA] = await PublicKey.findProgramAddress(
-      [
-        anchor.utils.bytes.utf8.encode("raffle"),
-        bank.publicKey.toBuffer(),
-        payer.publicKey.toBuffer(),
-      ],
-      program.programId
-    );
+  it("Buy ticket with wrong token", async () => {
+    const raffle = anchor.web3.Keypair.generate();
 
     await program.rpc.createRaffle(
       "Raffle 3",
-      "valid-Url_afert",
+      "url.com",
       new BN(1),
       new BN(1650605069),
       new BN(1650605069),
@@ -284,62 +246,53 @@ describe("raffle", () => {
       {
         accounts: {
           bank: bank.publicKey,
-          raffle: rafflePDA,
+          raffle: raffle.publicKey,
           tokenMint: tokenMint,
           payer: payer.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         },
-        signers: [payer],
+        signers: [payer, raffle],
       }
     );
 
-    const raffleAccounts = await program.account.raffle.fetch(rafflePDA);
+    const [ticketPDA, _] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode("tickets"),
+        raffle.publicKey.toBuffer(),
+        payer.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
 
-    console.log({
-      raffleAccounts,
-    });
+    const tokenWrong = await creatMintToken(connection, payer);
+    await fundATA(tokenWrong, payer, payer.publicKey, 10);
 
-    // const [ticketPDA, _] = await PublicKey.findProgramAddress(
-    //   [
-    //     anchor.utils.bytes.utf8.encode("tickets"),
-    //     rafflePDA.toBuffer(),
-    //     payer.publicKey.toBuffer(),
-    //   ],
-    //   program.programId
-    // );
+    const tokenAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenWrong.publicKey,
+      payer.publicKey
+    );
 
-    // const tokenAccount = await Token.getAssociatedTokenAddress(
-    //   ASSOCIATED_TOKEN_PROGRAM_ID,
-    //   TOKEN_PROGRAM_ID,
-    //   tokenMint2,
-    //   payer.publicKey
-    // );
-
-    // try {
-    //   await program.rpc.buyTickets(new BN(1), {
-    //     accounts: {
-    //       bank: bank.publicKey,
-    //       bankBox: bankAcc2,
-    //       raffle: rafflePDA,
-    //       tickets: ticketPDA,
-    //       tokenAccount: tokenAccount,
-    //       payer: payer.publicKey,
-    //       tokenProgram: TOKEN_PROGRAM_ID,
-    //       systemProgram: SystemProgram.programId,
-    //       rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-    //     },
-    //     signers: [payer],
-    //   });
-    // } catch (error) {
-    //   console.log({
-    //     error,
-    //   });
-    //   // assert.equal(
-    //   //   error.msg,
-    //   //   "AnchorError caused by account: token_account. Error Code: ConstraintRaw. Error Number: 2003. Error Message: A raw constraint was violated."
-    //   // );
-    //   return;
-    // }
+    try {
+      await program.rpc.buyTickets(new BN(1), {
+        accounts: {
+          bank: bank.publicKey,
+          bankBox: bankAcc,
+          raffle: raffle.publicKey,
+          tickets: ticketPDA,
+          tokenAccount: tokenAccount,
+          payer: payer.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        },
+        signers: [payer],
+      });
+    } catch ({ error }) {
+      assert.equal(error.errorMessage, "A raw constraint was violated");
+      return;
+    }
   });
 });
