@@ -22,7 +22,12 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
 
   tickets.bump = *ctx.bumps.get("tickets").unwrap();
   // let _ = *ctx.bumps.get("token_to_raffle").unwrap();
-  tickets.amount = amount;
+
+  tickets.amount = if tickets.amount > 0 {
+    tickets.amount + amount
+  } else {
+    amount
+  };
 
   let price = amount * raffle.raffle_price;
 
@@ -49,7 +54,7 @@ pub struct BuyTickets<'info> {
   #[account(mut)]
   pub payer: Signer<'info>,
 
-  #[account(init, seeds = [
+  #[account(init_if_needed, seeds = [
         b"tickets".as_ref(),
         raffle.key().as_ref(),
         payer.key().as_ref(),
