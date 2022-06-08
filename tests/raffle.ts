@@ -291,7 +291,7 @@ describe("raffle", () => {
         signers: [payer],
       });
     } catch ({ error }) {
-      assert.equal(error.errorMessage, "A raw constraint was violated");
+      assert.equal(error.errorMessage, "Invalid token account for this raffle");
       return;
     }
   });

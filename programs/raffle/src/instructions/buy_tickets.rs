@@ -21,7 +21,6 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
   let tickets = &mut ctx.accounts.tickets;
 
   tickets.bump = *ctx.bumps.get("tickets").unwrap();
-  // let _ = *ctx.bumps.get("token_to_raffle").unwrap();
 
   tickets.amount = if tickets.amount > 0 {
     tickets.amount + amount
@@ -40,6 +39,12 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
   token::transfer(ctx.accounts.transfer_ctx(), price)?;
 
   Ok(())
+}
+
+#[error_code]
+pub enum ErrorCode {
+  #[msg("Invalid token account for this raffle")]
+  InvalidTokenAccountProvided,
 }
 
 #[derive(Accounts)]
@@ -67,7 +72,7 @@ pub struct BuyTickets<'info> {
   #[account(mut)]
   pub bank_box: Box<Account<'info, TokenAccount>>,
 
-  #[account(mut, constraint = token_account.mint == raffle.token_mint)]
+  #[account(mut, constraint = token_account.mint == raffle.token_mint @ ErrorCode::InvalidTokenAccountProvided)]
   pub token_account: Box<Account<'info, TokenAccount>>,
 
   // Misc.
