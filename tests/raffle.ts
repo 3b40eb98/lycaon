@@ -26,6 +26,7 @@ describe("raffle", () => {
   let tokenMint: PublicKey;
   let tokenAcc: PublicKey;
   let bankAcc: PublicKey;
+  let raffleEx: PublicKey;
 
   before("fund wallet", async () => {
     const bankFund = await program.provider.connection.requestAirdrop(
@@ -141,6 +142,8 @@ describe("raffle", () => {
 
   it("Buy ticket", async () => {
     const raffle = anchor.web3.Keypair.generate();
+
+    raffleEx = raffle.publicKey;
 
     await program.rpc.createRaffle(
       "Raffle-to-buy",
@@ -294,5 +297,21 @@ describe("raffle", () => {
       assert.equal(error.errorMessage, "Invalid token account for this raffle");
       return;
     }
+  });
+
+  it("List all tickets from an raffle", async () => {
+    const tickets = await program.account.tickets.all([
+      {
+        memcmp: {
+          offset: 8, //
+          bytes: raffleEx.toBase58(),
+        },
+      },
+    ]);
+
+    console.log({
+      raffleEx: raffleEx.toBase58(),
+      tickets,
+    });
   });
 });
