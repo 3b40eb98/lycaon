@@ -8,12 +8,13 @@ pub struct Raffle {
   pub raffle_manager: Pubkey,
   pub raffle_price: u64,
 
+  pub max_entrants: i32,
   pub max_entries_per_wallet: i32,
 
   pub bank: Pubkey,
 
   pub winners: Vec<Pubkey>,
-  pub entries: Vec<Pubkey>,
+  pub max_winners: i32,
 
   pub token_mint: Pubkey,
   pub start_date_timestamps: i64,
