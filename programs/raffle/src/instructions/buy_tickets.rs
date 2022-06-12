@@ -17,8 +17,11 @@ impl<'info> BuyTickets<'info> {
 }
 
 pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
+  let payer = ctx.accounts.payer.key();
   let raffle = &mut ctx.accounts.raffle;
   let tickets = &mut ctx.accounts.tickets;
+  let price = amount * raffle.raffle_price;
+  let mut entrants = ctx.accounts.entrants.load_mut()?;
 
   tickets.bump = *ctx.bumps.get("tickets").unwrap();
 
@@ -27,8 +30,11 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
   } else {
     amount
   };
+  tickets.raffle = raffle.key();
 
-  let price = amount * raffle.raffle_price;
+  for _x in 0..amount {
+    entrants.append(payer)?;
+  }
 
   msg!(
     "gl you bought: {} tickets for the raffle: {}",
@@ -49,12 +55,15 @@ pub enum ErrorCode {
 
 #[derive(Accounts)]
 pub struct BuyTickets<'info> {
-  #[account(mut)]
+  #[account(mut, has_one = entrants, constraint = entrants.key() == raffle.entrants)]
   pub raffle: Box<Account<'info, Raffle>>,
 
   // bank
   #[account(mut)]
   pub bank: Box<Account<'info, Bank>>,
+
+  #[account(mut)]
+  pub entrants: AccountLoader<'info, Entrants>,
 
   #[account(mut)]
   pub payer: Signer<'info>,
