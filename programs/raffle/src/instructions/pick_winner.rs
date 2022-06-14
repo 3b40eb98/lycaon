@@ -11,9 +11,6 @@ pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
   let total_winners = raffle.max_winners;
   let total_entrants = entrants.total_entrants;
 
-  // let tickets = Pubkey::find_program_address(seeds: &[&[u8]], program_id: &Pubkey)
-
-  msg!("bank initialized");
   Ok(())
 }
 
