@@ -352,4 +352,36 @@ describe('raffle', () => {
       tickets,
     });
   });
+
+  it('pick winner', async () => {
+    const [entrantsPDA] = await PublicKey.findProgramAddress(
+      [anchor.utils.bytes.utf8.encode('entrants'), raffleEx.toBuffer()],
+      program.programId
+    );
+
+    const { blockhash } = await connection.getLatestBlockhash('recent');
+
+    const slotHashes = new anchor.web3.PublicKey(
+      'SysvarS1otHashes111111111111111111111111111'
+    );
+
+    // 15772581530002002718
+
+    connection.onLogs('all', (log) => {
+      console.log({
+        log,
+      });
+    });
+
+    await program.rpc.pickWinners({
+      accounts: {
+        raffle: raffleEx,
+        entrants: entrantsPDA,
+        systemProgram: SystemProgram.programId,
+        payer: payer.publicKey,
+        recentBlockhashes: slotHashes,
+      },
+      signers: [payer],
+    });
+  });
 });
