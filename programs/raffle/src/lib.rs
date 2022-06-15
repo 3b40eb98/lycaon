@@ -22,12 +22,12 @@ pub mod raffle {
         ctx: Context<CreateRaffle>,
         raffle_name: String,
         raffle_thumbnail: String,
-        max_entries_per_wallet: i32,
-        max_entrants: u64,
+        max_entries_per_wallet: u32,
+        max_entrants: u32,
         start_date_timestamps: i64,
         end_date_timestamps: i64,
-        raffle_price: u64,
-        max_winners: i32,
+        raffle_price: f32,
+        total_winners: u32,
     ) -> Result<()> {
         instructions::create_raffle::handler(
             ctx,
@@ -38,11 +38,11 @@ pub mod raffle {
             start_date_timestamps,
             end_date_timestamps,
             raffle_price,
-            max_winners,
+            total_winners,
         )
     }
 
-    pub fn buy_tickets(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
+    pub fn buy_tickets(ctx: Context<BuyTickets>, amount: u32) -> Result<()> {
         instructions::buy_tickets::handler(ctx, amount)
     }
     pub fn pick_winners(ctx: Context<PickWinner>) -> Result<()> {

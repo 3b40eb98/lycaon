@@ -16,11 +16,11 @@ impl<'info> BuyTickets<'info> {
   }
 }
 
-pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<BuyTickets>, amount: u32) -> Result<()> {
   let payer = ctx.accounts.payer.key();
   let raffle = &mut ctx.accounts.raffle;
   let tickets = &mut ctx.accounts.tickets;
-  let price = amount * raffle.raffle_price;
+  let price = amount * raffle.raffle_price as u32;
   let mut entrants = ctx.accounts.entrants.load_mut()?;
 
   tickets.bump = *ctx.bumps.get("tickets").unwrap();
@@ -42,7 +42,7 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
     raffle.name
   );
 
-  token::transfer(ctx.accounts.transfer_ctx(), price)?;
+  token::transfer(ctx.accounts.transfer_ctx(), price.into())?;
 
   Ok(())
 }
