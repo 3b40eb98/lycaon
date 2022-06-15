@@ -8,8 +8,8 @@ pub enum ErrorCode {
 
 #[account(zero_copy)]
 pub struct Entrants {
-  pub total_entrants: u32,
-  pub max_entrants: u32,
+  pub total_entrants: u64,
+  pub max_entrants: u64,
   pub entrants: [Pubkey; 6], // check how to define size dynamically
 }
 
