@@ -8,7 +8,7 @@ pub fn handler(
   raffle_name: String,
   raffle_thumbnail: String,
   max_entries_per_wallet: i32,
-  max_entrants: u32,
+  max_entrants: u64,
   start_date_timestamps: i64,
   end_date_timestamps: i64,
   raffle_price: u64,
@@ -43,7 +43,6 @@ pub struct CreateRaffle<'info> {
   #[account(mut)]
   pub bank: Box<Account<'info, Bank>>,
 
-  // TODO: check if has any way to set dynamic size from raffle account eg: Raffle::max_entrants * 32
   #[account(init,
         payer = payer,
         space = 8 + std::mem::size_of::<Raffle>())]

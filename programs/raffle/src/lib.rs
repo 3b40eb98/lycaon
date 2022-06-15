@@ -23,7 +23,7 @@ pub mod raffle {
         raffle_name: String,
         raffle_thumbnail: String,
         max_entries_per_wallet: i32,
-        max_entrants: u32,
+        max_entrants: u64,
         start_date_timestamps: i64,
         end_date_timestamps: i64,
         raffle_price: u64,
@@ -44,6 +44,9 @@ pub mod raffle {
 
     pub fn buy_tickets(ctx: Context<BuyTickets>, amount: u64) -> Result<()> {
         instructions::buy_tickets::handler(ctx, amount)
+    }
+    pub fn pick_winners(ctx: Context<PickWinner>) -> Result<()> {
+        instructions::pick_winners::handler(ctx)
     }
 }
 
