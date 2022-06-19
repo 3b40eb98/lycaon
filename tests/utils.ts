@@ -2,8 +2,8 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   Token,
   TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+} from '@solana/spl-token';
+import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 
 export const creatMintToken = async (
   connection: Connection,
