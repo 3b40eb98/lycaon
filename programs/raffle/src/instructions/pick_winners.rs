@@ -3,14 +3,13 @@ use anchor_lang::prelude::*;
 use crate::state::*;
 
 pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
-  let raffle = &mut ctx.accounts.raffle;
+  // let raffle = &mut ctx.accounts.raffle;
   let entrants = ctx.accounts.entrants.load_mut()?;
 
   let recent_blockhashes = &ctx.accounts.recent_blockhashes;
 
-  let total_winners = raffle.total_winners;
+  // let total_winners = raffle.total_winners;
   let total_entrants = entrants.total_entrants;
-  let entrantsss = entrants.entries;
 
   let random = u64::from_le_bytes(
     recent_blockhashes.to_account_info().data.borrow()[16..24]
@@ -18,13 +17,13 @@ pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
       .unwrap(),
   );
 
-  let winner_index = random % (entrants.total_entrants as u64);
+  let winner_index = random % (total_entrants as u64);
 
   msg!(
     "Number random {}, winner: {}, total_entrants: {}",
     random,
     winner_index,
-    entrants.total_entrants
+    total_entrants
   );
 
   // let winner = entrantsss[random];

@@ -15,12 +15,6 @@ pub enum RaffleErrorCode {
   #[msg("The total winners cannot exceed the number of participants")]
   TotalWinnerExceedTotalEntrants,
 }
-#[account(zero_copy)]
-pub struct Entrants {
-  pub total_entrants: u32,
-  pub max_entrants: u32,
-  pub entries: [Pubkey; 1000], // check how to define size dynamically
-}
 
 impl Entrants {
   pub fn append(&mut self, entrant: Pubkey) -> Result<()> {
@@ -31,6 +25,13 @@ impl Entrants {
     self.total_entrants += 1;
     Ok(())
   }
+}
+
+#[account(zero_copy)]
+pub struct Entrants {
+  pub total_entrants: u32,
+  pub max_entrants: u32,
+  pub entries: [Pubkey; 2], // find solution to dinamic size
 }
 
 #[account]
