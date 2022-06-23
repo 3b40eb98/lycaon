@@ -12,26 +12,8 @@ pub enum RaffleErrorCode {
   NoPastEndTime,
   #[msg("Start time cannot be a past date")]
   NoPastStartTime,
-  #[msg("The total winners cannot exceed the number of participants")]
+  #[msg("The total winners cannot exceed the number of entries")]
   TotalWinnerExceedTotalEntrants,
-}
-
-impl Entrants {
-  pub fn append(&mut self, entrant: Pubkey) -> Result<()> {
-    if self.total_entrants >= self.max_entrants {
-      return Err(error!(RaffleErrorCode::NoTicketsAvailable));
-    }
-    self.entries[self.total_entrants as usize] = entrant;
-    self.total_entrants += 1;
-    Ok(())
-  }
-}
-
-#[account(zero_copy)]
-pub struct Entrants {
-  pub total_entrants: u32,
-  pub max_entrants: u32,
-  pub entries: [Pubkey; 2], // find solution to dinamic size
 }
 
 #[account]
