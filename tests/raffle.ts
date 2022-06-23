@@ -23,13 +23,15 @@ describe('raffle', () => {
 
   const program = anchor.workspace.Raffle as Program<Raffle>;
 
+  // global state
   const payer = anchor.web3.Keypair.generate();
   const bank = anchor.web3.Keypair.generate();
 
+  let token: Token;
   let tokenMint: PublicKey;
   let tokenAcc: PublicKey;
   let bankAcc: PublicKey;
-  let raffleEx: PublicKey;
+  let raffleAcc: PublicKey;
 
   const today = new Date();
   const todayTimestamp = today.getTime();
@@ -53,7 +55,7 @@ describe('raffle', () => {
   });
 
   before('create mint token', async () => {
-    const token = await creatMintToken(connection, payer);
+    token = await creatMintToken(connection, payer);
 
     tokenAcc = await fundATA(token, payer, payer.publicKey, 10000);
     bankAcc = await fundATA(token, payer, bank.publicKey, 0);
@@ -68,7 +70,6 @@ describe('raffle', () => {
   });
 
   it('Is initialized!', async () => {
-    // Add your test here.
     const tx = await program.rpc.initialize({});
     console.log('Your transaction signature', tx);
   });
@@ -98,16 +99,16 @@ describe('raffle', () => {
 
   it('Create raffle', async () => {
     const raffle = anchor.web3.Keypair.generate();
-    const raffle2 = anchor.web3.Keypair.generate();
+
+    raffleAcc = raffle.publicKey;
 
     const entrants = anchor.web3.Keypair.generate();
-    const entrants2 = anchor.web3.Keypair.generate();
 
     await program.rpc.createRaffle(
       'Raffle 1',
       'url.com',
       new BN(1),
-      new BN(5),
+      new BN(155),
       new BN(todayTimestamp),
       new BN(todayPlus5DaysTimeStamp),
       new BN(20),
@@ -129,37 +130,7 @@ describe('raffle', () => {
       }
     );
 
-    await program.rpc.createRaffle(
-      'Raffle 2',
-      'url.com',
-      new BN(1),
-      new BN(5),
-      new BN(todayTimestamp),
-      new BN(todayPlus5DaysTimeStamp),
-      new BN(20),
-      new BN(2),
-      {
-        accounts: {
-          bank: bank.publicKey,
-          raffle: raffle2.publicKey,
-          entrants: entrants2.publicKey,
-          tokenMint,
-          payer: payer.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
-        },
-        instructions: [
-          await program.account.entrants.createInstruction(entrants2),
-        ],
-        signers: [payer, raffle2, entrants2],
-      }
-    );
-
     const raffleAccount = await program.account.raffle.fetch(raffle.publicKey);
-
-    const raffleAccount2 = await program.account.raffle.fetch(
-      raffle2.publicKey
-    );
 
     console.log({
       entrantsPubkey: raffleAccount.entrants.toBase58(),
@@ -168,63 +139,33 @@ describe('raffle', () => {
     });
 
     assert.equal(raffleAccount.name, 'Raffle 1');
-    assert.equal(raffleAccount2.name, 'Raffle 2');
   });
 
   it('Buy ticket', async () => {
-    const raffle = anchor.web3.Keypair.generate();
-    const entrants = anchor.web3.Keypair.generate();
-
-    raffleEx = raffle.publicKey;
-
-    await program.rpc.createRaffle(
-      'Raffle-to-buy',
-      'url.com',
-      new BN(1),
-      new BN(25),
-      new BN(todayTimestamp),
-      new BN(todayPlus5DaysTimeStamp),
-      new BN(20),
-      new BN(2),
-      {
-        accounts: {
-          bank: bank.publicKey,
-          raffle: raffle.publicKey,
-          entrants: entrants.publicKey,
-          tokenMint,
-          payer: payer.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
-        },
-        instructions: [
-          await program.account.entrants.createInstruction(entrants),
-        ],
-        signers: [payer, raffle, entrants],
-      }
-    );
+    const { entrants } = await program.account.raffle.fetch(raffleAcc);
 
     const [ticketPDA, _] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode('tickets'),
-        raffle.publicKey.toBuffer(),
+        raffleAcc.toBuffer(),
         payer.publicKey.toBuffer(),
       ],
       program.programId
     );
 
     console.log({
-      raffle: raffle.publicKey.toBase58(),
+      raffle: raffleAcc.toBase58(),
       ticketPDA: ticketPDA.toBase58(),
       bank: bank.publicKey.toBase58(),
-      entrantsPDA: entrants.publicKey.toBase58(),
+      entrantsPDA: entrants.toBase58(),
     });
 
     await program.rpc.buyTickets(new BN(1), {
       accounts: {
         bank: bank.publicKey,
-        entrants: entrants.publicKey,
+        entrants,
         bankBox: bankAcc,
-        raffle: raffle.publicKey,
+        raffle: raffleAcc,
         tickets: ticketPDA,
         tokenAccount: tokenAcc,
         payer: payer.publicKey,
@@ -250,8 +191,8 @@ describe('raffle', () => {
       accounts: {
         bank: bank.publicKey,
         bankBox: bankAcc,
-        raffle: raffle.publicKey,
-        entrants: entrants.publicKey,
+        raffle: raffleAcc,
+        entrants,
         tickets: ticketPDA,
         tokenAccount: tokenAcc,
         payer: payer.publicKey,
@@ -263,9 +204,7 @@ describe('raffle', () => {
     });
 
     const ticketsRefetch = await program.account.tickets.fetch(ticketPDA);
-    const entrantsAccount = await program.account.entrants.fetch(
-      entrants.publicKey
-    );
+    const entrantsAccount = await program.account.entrants.fetch(entrants);
 
     console.log(
       'receiver token balance: ',
@@ -280,40 +219,69 @@ describe('raffle', () => {
     assert.equal(ticketsRefetch.amount, 6);
   });
 
-  it('Buy ticket with wrong token', async () => {
-    const raffle = anchor.web3.Keypair.generate();
-    const entrants = anchor.web3.Keypair.generate();
-
-    await program.rpc.createRaffle(
-      'Raffle 3',
-      'url.com',
-      new BN(1),
-      new BN(5),
-      new BN(todayTimestamp),
-      new BN(todayPlus5DaysTimeStamp),
-      new BN(10),
-      new BN(2),
-      {
-        accounts: {
-          bank: bank.publicKey,
-          entrants: entrants.publicKey,
-          raffle: raffle.publicKey,
-          tokenMint,
-          payer: payer.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
-        },
-        instructions: [
-          await program.account.entrants.createInstruction(entrants),
-        ],
-        signers: [payer, raffle, entrants],
-      }
-    );
+  it('Buy ticket with another wallet', async () => {
+    const wallet = anchor.web3.Keypair.generate();
+    const { entrants } = await program.account.raffle.fetch(raffleAcc);
 
     const [ticketPDA, _] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode('tickets'),
-        raffle.publicKey.toBuffer(),
+        raffleAcc.toBuffer(),
+        wallet.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
+    const fundWallet = await program.provider.connection.requestAirdrop(
+      wallet.publicKey,
+      5 * anchor.web3.LAMPORTS_PER_SOL
+    );
+    await program.provider.connection.confirmTransaction(fundWallet);
+    const tokenAccount = await fundATA(token, payer, wallet.publicKey, 5000);
+
+    await program.rpc.buyTickets(new BN(2), {
+      accounts: {
+        bank: bank.publicKey,
+        entrants,
+        bankBox: bankAcc,
+        raffle: raffleAcc,
+        tickets: ticketPDA,
+        tokenAccount,
+        payer: wallet.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      },
+      signers: [wallet],
+    });
+
+    const tickets = await program.account.tickets.fetch(ticketPDA);
+
+    console.log({
+      ticketsAmount: tickets.amount,
+    });
+
+    console.log(
+      'receiver token balance: ',
+      await program.provider.connection.getTokenAccountBalance(bankAcc)
+    );
+
+    const entrantsAccount = await program.account.entrants.fetch(entrants);
+
+    console.log(
+      'receiver token balance: ',
+      await program.provider.connection.getTokenAccountBalance(bankAcc)
+    );
+
+    assert.equal(tickets.amount, 2);
+  });
+
+  it('Buy ticket with wrong token', async () => {
+    const { entrants } = await program.account.raffle.fetch(raffleAcc);
+    const [ticketPDA, _] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode('tickets'),
+        raffleAcc.toBuffer(),
         payer.publicKey.toBuffer(),
       ],
       program.programId
@@ -329,13 +297,19 @@ describe('raffle', () => {
       payer.publicKey
     );
 
+    console.log({
+      ticketPDA: ticketPDA.toBase58(),
+      tokenAccount: tokenAccount.toBase58(),
+      entrants: entrants.toBase58(),
+    });
+
     try {
       await program.rpc.buyTickets(new BN(1), {
         accounts: {
           bank: bank.publicKey,
           bankBox: bankAcc,
-          raffle: raffle.publicKey,
-          entrants: entrants.publicKey,
+          raffle: raffleAcc,
+          entrants,
           tickets: ticketPDA,
           tokenAccount,
           payer: payer.publicKey,
@@ -350,25 +324,43 @@ describe('raffle', () => {
     }
   });
 
-  it.skip('List all tickets from an raffle', async () => {
-    const raffleAccount = await program.account.raffle.fetch(raffleEx);
+  it('List all tickets from a raffle', async () => {
+    const tickets = await program.account.tickets.all([
+      {
+        memcmp: {
+          offset: 8, // Discriminator.
+          bytes: raffleAcc.toBase58(),
+        },
+      },
+    ]);
 
-    // const tickets = await program.account.tickets.all(
-    //   [{
-    //     dataSize:
-    //   }]
-    // );
-
-    console.log({
-      raffleEx: raffleEx.toBase58(),
-      // tickets,
-    });
+    assert.equal(tickets.length, 2);
   });
 
-  it('pick winner', async () => {
-    const raffleAccount = await program.account.raffle.fetch(raffleEx);
+  it('List all tickets of a wallet from raffle', async () => {
+    const [ticketPDA, _] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode('tickets'),
+        raffleAcc.toBuffer(),
+        payer.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
 
-    const { blockhash } = await connection.getLatestBlockhash('recent');
+    const tickets = await program.account.tickets.fetch(ticketPDA);
+
+    console.log({
+      raffleEx: raffleAcc.toBase58(),
+      tickets,
+    });
+    assert.equal(tickets.amount, 6);
+    assert.equal(tickets.raffle.toBase58(), raffleAcc.toBase58());
+  });
+
+  it.skip('pick winner', async () => {
+    const raffleAccount = await program.account.raffle.fetch(raffleAcc);
+
+    // const { blockhash } = await connection.getLatestBlockhash('recent');
 
     const slotHashes = new anchor.web3.PublicKey(
       'SysvarS1otHashes111111111111111111111111111'
@@ -384,7 +376,7 @@ describe('raffle', () => {
 
     await program.rpc.pickWinners({
       accounts: {
-        raffle: raffleEx,
+        raffle: raffleAcc,
         entrants: raffleAccount.entrants,
         systemProgram: SystemProgram.programId,
         payer: payer.publicKey,
