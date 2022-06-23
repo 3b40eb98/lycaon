@@ -37,7 +37,7 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u32) -> Result<()> {
   }
 
   msg!(
-    "gl you bought: {} tickets for the raffle: {}",
+    "gl in the raffle. You have bought {} tickets for {}",
     amount,
     raffle.name
   );
@@ -68,6 +68,7 @@ pub struct BuyTickets<'info> {
   #[account(mut)]
   pub payer: Signer<'info>,
 
+  // this make senses?
   #[account(init_if_needed, seeds = [
         b"tickets".as_ref(),
         raffle.key().as_ref(),
