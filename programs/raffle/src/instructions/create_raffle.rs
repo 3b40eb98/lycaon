@@ -42,7 +42,7 @@ pub fn handler(
   bank.raffles_count += 1;
 
   raffle.name = raffle_name;
-  // raffle.entrants = ctx.accounts.entrants.key();
+  raffle.entrants = ctx.accounts.entrants.key();
   raffle.winners = Vec::new();
   raffle.total_winners = total_winners;
   raffle.raffle_manager = ctx.accounts.payer.key();
@@ -67,8 +67,7 @@ pub struct CreateRaffle<'info> {
     space = 8 + std::mem::size_of::<Raffle>())]
   pub raffle: Account<'info, Raffle>,
 
-  #[account(zero, seeds = [b"entrants", raffle.key().as_ref()],
-  bump)]
+  #[account(zero)]
   pub entrants: AccountLoader<'info, Entrants>,
 
   pub token_mint: Account<'info, Mint>,
