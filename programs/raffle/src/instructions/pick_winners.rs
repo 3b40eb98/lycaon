@@ -2,13 +2,24 @@ use anchor_lang::prelude::*;
 
 use crate::state::*;
 
+#[error_code]
+pub enum PickWinnerErrorCode {
+  #[msg("Total winners has already been picked")]
+  WinnersAlreadyPicked,
+}
+
 pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
-  // let raffle = &mut ctx.accounts.raffle;
+  let raffle = &mut ctx.accounts.raffle;
   let entrants = ctx.accounts.entrants.load_mut()?;
 
   let recent_blockhashes = &ctx.accounts.recent_blockhashes;
 
-  // let total_winners = raffle.total_winners;
+  let total_winners = raffle.total_winners as usize;
+
+  if raffle.winners.len() >= total_winners {
+    return Err(error!(PickWinnerErrorCode::WinnersAlreadyPicked));
+  }
+
   let total_entrants = entrants.total_entrants;
 
   let random = u64::from_le_bytes(
@@ -26,9 +37,9 @@ pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
     total_entrants
   );
 
-  // let winner = entrantsss[random];
+  let winner = entrants.entries[winner_index as usize];
 
-  // raffle.winners.push(winner);
+  raffle.winners.push(winner);
 
   Ok(())
 }

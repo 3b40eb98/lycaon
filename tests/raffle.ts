@@ -139,6 +139,7 @@ describe('raffle', () => {
     });
 
     assert.equal(raffleAccount.name, 'Raffle 1');
+    assert.equal(raffleAccount.totalWinners, 2);
   });
 
   it('Buy ticket', async () => {
@@ -357,7 +358,7 @@ describe('raffle', () => {
     assert.equal(tickets.raffle.toBase58(), raffleAcc.toBase58());
   });
 
-  it.skip('pick winner', async () => {
+  it('pick winner', async () => {
     const raffleAccount = await program.account.raffle.fetch(raffleAcc);
 
     // const { blockhash } = await connection.getLatestBlockhash('recent');
@@ -365,8 +366,6 @@ describe('raffle', () => {
     const slotHashes = new anchor.web3.PublicKey(
       'SysvarS1otHashes111111111111111111111111111'
     );
-
-    // 15772581530002002718
 
     // connection.onLogs('all', (log) => {
     //   console.log({
@@ -384,5 +383,13 @@ describe('raffle', () => {
       },
       signers: [payer],
     });
+
+    const raffleRefetch = await program.account.raffle.fetch(raffleAcc);
+
+    console.log({
+      winners: raffleRefetch.winners,
+    });
+
+    assert.lengthOf(raffleRefetch.winners, 1);
   });
 });
