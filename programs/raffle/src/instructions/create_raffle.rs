@@ -1,11 +1,21 @@
-use anchor_lang::prelude::*;
-
-use anchor_spl::token::{Mint, Token};
-
 use crate::state::*;
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+
+impl<'info> CreateRaffle<'info> {
+  fn transer_prize_to_vault(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+    let cpi_accounts = Transfer {
+      from: self.prize_token_account.to_account_info().clone(),
+      to: self.prize_box.to_account_info().clone(),
+      authority: self.creator.to_account_info().clone(),
+    };
+    CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+  }
+}
 
 pub fn handler(
   ctx: Context<CreateRaffle>,
+  _bump_authority: u8,
   raffle_name: String,
   raffle_thumbnail: String,
   max_entries_per_wallet: u32,
@@ -18,6 +28,7 @@ pub fn handler(
   let raffle = &mut ctx.accounts.raffle;
   let bank = &mut ctx.accounts.bank;
   let entrants = &mut ctx.accounts.entrants.load_init()?;
+  let vault = &mut ctx.accounts.vault;
 
   let clock = Clock::get()?;
 
@@ -45,35 +56,71 @@ pub fn handler(
   raffle.entrants = ctx.accounts.entrants.key();
   raffle.winners = Vec::new();
   raffle.total_winners = total_winners;
-  raffle.raffle_manager = ctx.accounts.payer.key();
+  raffle.raffle_manager = ctx.accounts.creator.key();
   raffle.raffle_thumbnail = raffle_thumbnail;
   raffle.max_entries_per_wallet = max_entries_per_wallet;
   raffle.start_date_timestamps = start_date_timestamps;
   raffle.end_date_timestamps = end_date_timestamps;
-  raffle.token_mint = ctx.accounts.token_mint.key();
+  raffle.prize_token_mint = ctx.accounts.prize_token_mint.key();
+  raffle.prize_token_account = ctx.accounts.prize_token_account.key();
+  raffle.receive_token_account = ctx.accounts.receive_token_account.key();
   raffle.bank = bank.key();
   raffle.raffle_price = raffle_price;
+
+  vault.raffle_count += 1;
+
+  // transfer prize to the vault
+  // TODO : validate if the prize is a nft
+  token::transfer(ctx.accounts.transer_prize_to_vault(), 1)?;
 
   Ok(())
 }
 
 #[derive(Accounts)]
+#[instruction(bump_authority: u8)]
 pub struct CreateRaffle<'info> {
   #[account(mut)]
   pub bank: Box<Account<'info, Bank>>,
 
   #[account(init,
-    payer = payer,
+    payer = creator,
     space = 8 + std::mem::size_of::<Raffle>())]
   pub raffle: Account<'info, Raffle>,
 
   #[account(zero)]
   pub entrants: AccountLoader<'info, Entrants>,
 
-  pub token_mint: Account<'info, Mint>,
+  #[account(mut,has_one = creator, has_one = authority)]
+  pub vault: Box<Account<'info, Vault>>,
+
+  /// CHECK:
+  #[account(seeds = [&VAULT_PDA_SEED, creator.key().as_ref()], bump = bump_authority)]
+  pub authority: AccountInfo<'info>,
+
+  // TODO : improve name
+  pub receive_token_account: Account<'info, TokenAccount>,
+
+  // w the winner will win
+  pub prize_token_mint: Account<'info, Mint>,
+  #[account(mut)]
+  pub prize_token_account: Account<'info, TokenAccount>,
+
+  #[account(init_if_needed, seeds = [
+    b"token-seed".as_ref(),
+    vault.key().as_ref(),
+    prize_token_mint.key().as_ref(),
+  ],
+    bump,
+    token::mint = prize_token_mint,
+    token::authority = authority,
+    payer = creator
+  )]
+  pub prize_box: Box<Account<'info, TokenAccount>>,
 
   #[account(mut)]
-  pub payer: Signer<'info>,
+  pub creator: Signer<'info>,
+
   pub token_program: Program<'info, Token>,
   pub system_program: Program<'info, System>,
+  pub rent: Sysvar<'info, Rent>,
 }

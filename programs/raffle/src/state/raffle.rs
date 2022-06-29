@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 pub const MAX_ENTRANTS: u32 = 1000;
+pub const RAFFLE_ESCROW_PDA_SEED: &[u8] = b"raffle-escrow";
 
 #[error_code]
 pub enum RaffleErrorCode {
@@ -33,7 +34,9 @@ pub struct Raffle {
   pub winners: Vec<Pubkey>,
   pub total_winners: u32,
 
-  pub token_mint: Pubkey,
+  pub prize_token_mint: Pubkey,
+  pub prize_token_account: Pubkey,
+  pub receive_token_account: Pubkey,
   pub start_date_timestamps: i64,
   pub end_date_timestamps: i64,
 }
