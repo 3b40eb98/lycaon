@@ -18,8 +18,13 @@ pub mod raffle {
         instructions::init_bank::handler(ctx)
     }
 
+    pub fn init_vault(ctx: Context<InitVault>) -> Result<()> {
+        instructions::init_vault::handler(ctx)
+    }
+
     pub fn create_raffle(
         ctx: Context<CreateRaffle>,
+        bump_authority: u8,
         raffle_name: String,
         raffle_thumbnail: String,
         max_entries_per_wallet: u32,
@@ -31,6 +36,7 @@ pub mod raffle {
     ) -> Result<()> {
         instructions::create_raffle::handler(
             ctx,
+            bump_authority,
             raffle_name,
             raffle_thumbnail,
             max_entries_per_wallet,
