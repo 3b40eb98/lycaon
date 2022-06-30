@@ -1,7 +1,7 @@
 [features]
 seeds = false
 [programs.localnet]
-raffle = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+raffle = "wph5h6ezsZajS4w2Pu4AKr5gpxNgjtEnjUZaX9BTf4z"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -12,3 +12,4 @@ wallet = "/Users/wosleyvacemberg/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+copy-idl = "mkdir -p app/src/idl && cp target/idl/raffle.json app/src/idl/raffle.json"
