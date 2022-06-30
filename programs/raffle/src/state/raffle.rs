@@ -20,7 +20,6 @@ pub enum RaffleErrorCode {
 #[account]
 pub struct Raffle {
   pub name: String,
-  pub raffle_thumbnail: String,
   // manager to control raffle, update, pick winner and end before timestamps
   pub raffle_manager: Pubkey,
   pub raffle_price: f32,
@@ -30,6 +29,7 @@ pub struct Raffle {
   pub entrants: Pubkey,
 
   pub bank: Pubkey,
+  pub vault: Pubkey,
 
   pub winners: Vec<Pubkey>,
   pub total_winners: u32,

@@ -17,7 +17,6 @@ pub fn handler(
   ctx: Context<CreateRaffle>,
   _bump_authority: u8,
   raffle_name: String,
-  raffle_thumbnail: String,
   max_entries_per_wallet: u32,
   max_entrants: u32,
   start_date_timestamps: i64,
@@ -57,15 +56,15 @@ pub fn handler(
   raffle.winners = Vec::new();
   raffle.total_winners = total_winners;
   raffle.raffle_manager = ctx.accounts.creator.key();
-  raffle.raffle_thumbnail = raffle_thumbnail;
   raffle.max_entries_per_wallet = max_entries_per_wallet;
   raffle.start_date_timestamps = start_date_timestamps;
   raffle.end_date_timestamps = end_date_timestamps;
-  raffle.prize_token_mint = ctx.accounts.prize_token_mint.key();
   raffle.prize_token_account = ctx.accounts.prize_token_account.key();
+  raffle.prize_token_mint = ctx.accounts.prize_token_mint.key();
   raffle.receive_token_account = ctx.accounts.receive_token_account.key();
   raffle.bank = bank.key();
   raffle.raffle_price = raffle_price;
+  raffle.vault = vault.key();
 
   vault.raffle_count += 1;
 
@@ -94,7 +93,7 @@ pub struct CreateRaffle<'info> {
   pub vault: Box<Account<'info, Vault>>,
 
   /// CHECK:
-  #[account(seeds = [&VAULT_PDA_SEED, creator.key().as_ref()], bump = bump_authority)]
+  #[account(seeds = [&VAULT_PDA_SEED, vault.key().as_ref()], bump = bump_authority)]
   pub authority: AccountInfo<'info>,
 
   // TODO : improve name
