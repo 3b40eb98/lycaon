@@ -1,26 +1,26 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::state::*;
 
 impl<'info> BuyTickets<'info> {
-  fn transfer_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+  fn buy_tickets(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
     CpiContext::new(
       self.token_program.to_account_info(),
       Transfer {
         from: self.token_account.to_account_info(),
-        to: self.bank_box.to_account_info(),
+        to: self.token_box.to_account_info(),
         authority: self.payer.to_account_info(),
       },
     )
   }
 }
 
-pub fn handler(ctx: Context<BuyTickets>, amount: u32) -> Result<()> {
+pub fn handler(ctx: Context<BuyTickets>, _bump_authority: u8, amount: u32) -> Result<()> {
   let payer = ctx.accounts.payer.key();
   let raffle = &mut ctx.accounts.raffle;
   let tickets = &mut ctx.accounts.tickets;
-  let price = amount * raffle.raffle_price as u32;
+  let total_raffle_price = amount * raffle.raffle_price as u32;
   let mut entrants = ctx.accounts.entrants.load_mut()?;
 
   tickets.bump = *ctx.bumps.get("tickets").unwrap();
@@ -42,7 +42,7 @@ pub fn handler(ctx: Context<BuyTickets>, amount: u32) -> Result<()> {
     raffle.name
   );
 
-  token::transfer(ctx.accounts.transfer_ctx(), price.into())?;
+  token::transfer(ctx.accounts.buy_tickets(), total_raffle_price.into())?;
 
   Ok(())
 }
@@ -54,6 +54,7 @@ pub enum ErrorCode {
 }
 
 #[derive(Accounts)]
+#[instruction(bump_authority: u8)]
 pub struct BuyTickets<'info> {
   #[account(mut, has_one = entrants, constraint = entrants.key() == raffle.entrants)]
   pub raffle: Box<Account<'info, Raffle>>,
@@ -79,10 +80,27 @@ pub struct BuyTickets<'info> {
     space = 8 + std::mem::size_of::<Tickets>())]
   pub tickets: Account<'info, Tickets>,
 
-  #[account(mut)]
-  pub bank_box: Box<Account<'info, TokenAccount>>,
+  #[account(mut, has_one = authority)]
+  pub vault: Box<Account<'info, Vault>>,
 
-  #[account(mut, constraint = token_account.mint == raffle.receive_token_account @ ErrorCode::InvalidTokenAccountProvided)]
+  /// CHECK:
+  #[account(seeds = [&VAULT_PDA_SEED, vault.key().as_ref()], bump = bump_authority)]
+  pub authority: AccountInfo<'info>,
+
+  #[account(init_if_needed, seeds = [
+    b"token-seed".as_ref(),
+    vault.key().as_ref(),
+    token_mint.key().as_ref(),
+  ],
+    bump,
+    token::mint = token_mint,
+    token::authority = authority,
+    payer = payer
+  )]
+  pub token_box: Box<Account<'info, TokenAccount>>,
+
+  pub token_mint: Account<'info, Mint>,
+  #[account(mut)]
   pub token_account: Box<Account<'info, TokenAccount>>,
 
   // Misc.
