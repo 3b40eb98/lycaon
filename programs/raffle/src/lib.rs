@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use instructions::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("wph5h6ezsZajS4w2Pu4AKr5gpxNgjtEnjUZaX9BTf4z");
 
 pub mod instructions;
 pub mod state;
@@ -26,7 +26,6 @@ pub mod raffle {
         ctx: Context<CreateRaffle>,
         bump_authority: u8,
         raffle_name: String,
-        raffle_thumbnail: String,
         max_entries_per_wallet: u32,
         max_entrants: u32,
         start_date_timestamps: i64,
@@ -38,7 +37,6 @@ pub mod raffle {
             ctx,
             bump_authority,
             raffle_name,
-            raffle_thumbnail,
             max_entries_per_wallet,
             max_entrants,
             start_date_timestamps,
@@ -48,8 +46,8 @@ pub mod raffle {
         )
     }
 
-    pub fn buy_tickets(ctx: Context<BuyTickets>, amount: u32) -> Result<()> {
-        instructions::buy_tickets::handler(ctx, amount)
+    pub fn buy_tickets(ctx: Context<BuyTickets>, bump_authority: u8, amount: u32) -> Result<()> {
+        instructions::buy_tickets::handler(ctx, bump_authority, amount)
     }
     pub fn pick_winners(ctx: Context<PickWinner>) -> Result<()> {
         instructions::pick_winners::handler(ctx)
