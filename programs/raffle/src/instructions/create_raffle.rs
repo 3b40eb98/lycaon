@@ -61,7 +61,7 @@ pub fn handler(
   raffle.end_date_timestamps = end_date_timestamps;
   raffle.prize_token_account = ctx.accounts.prize_token_account.key();
   raffle.prize_token_mint = ctx.accounts.prize_token_mint.key();
-  raffle.receive_token_account = ctx.accounts.receive_token_account.key();
+  raffle.receive_token_mint = ctx.accounts.receive_token_mint.key();
   raffle.bank = bank.key();
   raffle.raffle_price = raffle_price;
   raffle.vault = vault.key();
@@ -97,7 +97,7 @@ pub struct CreateRaffle<'info> {
   pub authority: AccountInfo<'info>,
 
   // TODO : improve name
-  pub receive_token_account: Account<'info, TokenAccount>,
+  pub receive_token_mint: Account<'info, Mint>,
 
   // w the winner will win
   pub prize_token_mint: Account<'info, Mint>,
