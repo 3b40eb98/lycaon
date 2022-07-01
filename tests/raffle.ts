@@ -87,29 +87,6 @@ describe('raffle', () => {
     console.log('Your transaction signature', tx);
   });
 
-  it('Create bank', async () => {
-    console.log('bank address', bank.publicKey.toBase58());
-
-    await program.rpc.initBank({
-      accounts: {
-        bank: bank.publicKey,
-        bankManager: payer.publicKey,
-        payer: payer.publicKey,
-        systemProgram: SystemProgram.programId,
-      },
-      signers: [bank, payer],
-    });
-
-    const bankAccount = await program.account.bank.fetch(bank.publicKey);
-
-    assert.equal(
-      bankAccount.bankManager.toBase58(),
-      payer.publicKey.toBase58()
-    );
-
-    assert(bankAccount.rafflesCount.eq(new BN(0)));
-  });
-
   it('Init vault', async () => {
     const [vault, vaultBump] = await PublicKey.findProgramAddress(
       [Buffer.from('vault-account'), payer.publicKey.toBuffer()],
@@ -182,7 +159,6 @@ describe('raffle', () => {
       new BN(2),
       {
         accounts: {
-          bank: bank.publicKey,
           raffle: raffle.publicKey,
           entrants: entrants.publicKey,
           prizeTokenMint: prizeTokenMint.publicKey,
@@ -249,13 +225,11 @@ describe('raffle', () => {
     console.log({
       raffle: raffleAcc.toBase58(),
       ticketPDA: ticketPDA.toBase58(),
-      bank: bank.publicKey.toBase58(),
       entrantsPDA: entrants.toBase58(),
     });
 
     await program.rpc.buyTickets(vaultAuthBump, new BN(1), {
       accounts: {
-        bank: bank.publicKey,
         entrants,
         vault: vaultAddr,
         raffle: raffleAcc,
@@ -285,7 +259,6 @@ describe('raffle', () => {
 
     await program.rpc.buyTickets(vaultAuthBump, new BN(5), {
       accounts: {
-        bank: bank.publicKey,
         entrants,
         vault: vaultAddr,
         raffle: raffleAcc,
@@ -362,7 +335,6 @@ describe('raffle', () => {
 
     await program.rpc.buyTickets(vaultAuthBump, new BN(2), {
       accounts: {
-        bank: bank.publicKey,
         entrants,
         vault: vaultAddr,
         raffle: raffleAcc,
@@ -444,7 +416,6 @@ describe('raffle', () => {
     try {
       await program.rpc.buyTickets(vaultAuthBump, new BN(1), {
         accounts: {
-          bank: bank.publicKey,
           entrants,
           vault: vaultAddr,
           raffle: raffleAcc,

@@ -59,10 +59,6 @@ pub struct BuyTickets<'info> {
   #[account(mut, has_one = entrants, constraint = entrants.key() == raffle.entrants)]
   pub raffle: Box<Account<'info, Raffle>>,
 
-  // bank
-  #[account(mut)]
-  pub bank: Box<Account<'info, Bank>>,
-
   #[account(mut)]
   pub entrants: AccountLoader<'info, Entrants>,
 

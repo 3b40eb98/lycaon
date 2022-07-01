@@ -14,10 +14,6 @@ pub mod raffle {
         Ok(())
     }
 
-    pub fn init_bank(ctx: Context<InitBank>) -> Result<()> {
-        instructions::init_bank::handler(ctx)
-    }
-
     pub fn init_vault(ctx: Context<InitVault>) -> Result<()> {
         instructions::init_vault::handler(ctx)
     }

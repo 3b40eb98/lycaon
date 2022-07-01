@@ -28,7 +28,6 @@ pub struct Raffle {
 
   pub entrants: Pubkey,
 
-  pub bank: Pubkey,
   pub vault: Pubkey,
 
   pub winners: Vec<Pubkey>,
