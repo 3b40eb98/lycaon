@@ -156,7 +156,7 @@ describe('raffle', () => {
       new BN(todayTimestamp),
       new BN(todayPlus5DaysTimeStamp),
       new BN(20),
-      new BN(2),
+      new BN(5),
       {
         accounts: {
           raffle: raffle.publicKey,
@@ -193,7 +193,7 @@ describe('raffle', () => {
     );
 
     assert.equal(raffleAccount.name, 'Raffle 1');
-    assert.equal(raffleAccount.totalWinners, 2);
+    assert.equal(raffleAccount.totalWinners, 5);
   });
 
   it('Buy ticket', async () => {
@@ -484,7 +484,7 @@ describe('raffle', () => {
         raffle: raffleAcc,
         entrants: raffleAccount.entrants,
         systemProgram: SystemProgram.programId,
-        payer: payer.publicKey,
+        raffleManager: payer.publicKey,
         slotHashes,
       },
       signers: [payer],
@@ -497,5 +497,43 @@ describe('raffle', () => {
     });
 
     assert.lengthOf(raffleRefetch.winners, 1);
+  });
+
+  it('pick winner without being a raffle manager', async () => {
+    const { entrants } = await program.account.raffle.fetch(raffleAcc);
+    const wallet = new anchor.web3.Keypair();
+
+    console.log({
+      walletPubkey: wallet.publicKey.toBase58(),
+      payerPubkey: payer.publicKey.toBase58(),
+    });
+
+    const fundWallet = await program.provider.connection.requestAirdrop(
+      wallet.publicKey,
+      5 * anchor.web3.LAMPORTS_PER_SOL
+    );
+    await program.provider.connection.confirmTransaction(fundWallet);
+
+    const slotHashes = new anchor.web3.PublicKey(
+      'SysvarS1otHashes111111111111111111111111111'
+    );
+
+    try {
+      await program.rpc.pickWinners({
+        accounts: {
+          raffle: raffleAcc,
+          entrants,
+          systemProgram: SystemProgram.programId,
+          raffleManager: wallet.publicKey,
+          slotHashes,
+        },
+        signers: [wallet],
+      });
+    } catch ({ error }) {
+      assert.equal(
+        error.errorMessage,
+        'Only the raffle_manager of this raffle can pick a winner'
+      );
+    }
   });
 });

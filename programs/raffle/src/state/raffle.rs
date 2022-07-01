@@ -15,6 +15,10 @@ pub enum RaffleErrorCode {
   NoPastStartTime,
   #[msg("The total winners cannot exceed the number of entries")]
   TotalWinnerExceedTotalEntrants,
+  #[msg("Total winners has already been picked")]
+  WinnersAlreadyPicked,
+  #[msg("Only the raffle_manager of this raffle can pick a winner")]
+  OnlyRaffleManagerCanPickWinner,
 }
 
 #[account]
