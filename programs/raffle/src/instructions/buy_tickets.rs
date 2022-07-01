@@ -100,7 +100,7 @@ pub struct BuyTickets<'info> {
   pub token_box: Box<Account<'info, TokenAccount>>,
 
   pub token_mint: Account<'info, Mint>,
-  #[account(mut)]
+  #[account(mut, constraint = token_account.mint == raffle.receive_token_mint @ ErrorCode::InvalidTokenAccountProvided)]
   pub token_account: Box<Account<'info, TokenAccount>>,
 
   // Misc.
