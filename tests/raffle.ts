@@ -504,17 +504,9 @@ describe('raffle', () => {
   it('pick winner', async () => {
     const raffleAccount = await program.account.raffle.fetch(raffleAcc);
 
-    // const { blockhash } = await connection.getLatestBlockhash('recent');
-
     const slotHashes = new anchor.web3.PublicKey(
       'SysvarS1otHashes111111111111111111111111111'
     );
-
-    // connection.onLogs('all', (log) => {
-    //   console.log({
-    //     log,
-    //   });
-    // });
 
     await program.rpc.pickWinners({
       accounts: {
@@ -522,7 +514,7 @@ describe('raffle', () => {
         entrants: raffleAccount.entrants,
         systemProgram: SystemProgram.programId,
         payer: payer.publicKey,
-        recentBlockhashes: slotHashes,
+        slotHashes,
       },
       signers: [payer],
     });

@@ -12,7 +12,7 @@ pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
   let raffle = &mut ctx.accounts.raffle;
   let entrants = ctx.accounts.entrants.load_mut()?;
 
-  let recent_blockhashes = &ctx.accounts.recent_blockhashes;
+  let slot_hashes = &ctx.accounts.slot_hashes;
 
   let total_winners = raffle.total_winners as usize;
 
@@ -23,7 +23,7 @@ pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
   let total_entrants = entrants.total_entrants;
 
   let random = u64::from_le_bytes(
-    recent_blockhashes.to_account_info().data.borrow()[16..24]
+    slot_hashes.to_account_info().data.borrow()[16..24]
       .try_into()
       .unwrap(),
   );
@@ -52,7 +52,7 @@ pub struct PickWinner<'info> {
   #[account(mut)]
   pub entrants: AccountLoader<'info, Entrants>,
   /// CHECK:
-  pub recent_blockhashes: UncheckedAccount<'info>,
+  pub slot_hashes: UncheckedAccount<'info>,
 
   // misc
   #[account(mut)]
