@@ -25,7 +25,6 @@ pub fn handler(
   total_winners: u32,
 ) -> Result<()> {
   let raffle = &mut ctx.accounts.raffle;
-  let bank = &mut ctx.accounts.bank;
   let entrants = &mut ctx.accounts.entrants.load_init()?;
   let vault = &mut ctx.accounts.vault;
 
@@ -49,8 +48,6 @@ pub fn handler(
 
   entrants.max_entrants = max_entrants;
 
-  bank.raffles_count += 1;
-
   raffle.name = raffle_name;
   raffle.entrants = ctx.accounts.entrants.key();
   raffle.winners = Vec::new();
@@ -62,7 +59,6 @@ pub fn handler(
   raffle.prize_token_account = ctx.accounts.prize_token_account.key();
   raffle.prize_token_mint = ctx.accounts.prize_token_mint.key();
   raffle.receive_token_mint = ctx.accounts.receive_token_mint.key();
-  raffle.bank = bank.key();
   raffle.raffle_price = raffle_price;
   raffle.vault = vault.key();
 
@@ -78,9 +74,6 @@ pub fn handler(
 #[derive(Accounts)]
 #[instruction(bump_authority: u8)]
 pub struct CreateRaffle<'info> {
-  #[account(mut)]
-  pub bank: Box<Account<'info, Bank>>,
-
   #[account(init,
     payer = creator,
     space = 8 + std::mem::size_of::<Raffle>())]
