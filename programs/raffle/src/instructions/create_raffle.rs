@@ -58,14 +58,14 @@ pub fn handler(
   raffle.end_date_timestamps = end_date_timestamps;
   raffle.prize_token_account = ctx.accounts.prize_token_account.key();
   raffle.prize_token_mint = ctx.accounts.prize_token_mint.key();
-  raffle.receive_token_mint = ctx.accounts.receive_token_mint.key();
+  raffle.spl_token_mint = ctx.accounts.spl_token_mint.key();
   raffle.raffle_price = raffle_price;
   raffle.vault = vault.key();
 
   vault.raffle_count += 1;
 
   // transfer prize to the vault
-  // TODO : validate if the prize is a nft
+  // TODO : make optional transfer of prize to vault in case it is wl draw or something
   token::transfer(ctx.accounts.transer_prize_to_vault(), 1)?;
 
   Ok(())
@@ -89,8 +89,7 @@ pub struct CreateRaffle<'info> {
   #[account(seeds = [&VAULT_PDA_SEED, vault.key().as_ref()], bump = bump_authority)]
   pub authority: AccountInfo<'info>,
 
-  // TODO : improve name
-  pub receive_token_mint: Account<'info, Mint>,
+  pub spl_token_mint: Account<'info, Mint>,
 
   // w the winner will win
   pub prize_token_mint: Account<'info, Mint>,
