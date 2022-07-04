@@ -48,6 +48,13 @@ pub mod raffle {
     pub fn pick_winners(ctx: Context<PickWinner>) -> Result<()> {
         instructions::pick_winners::handler(ctx)
     }
+    pub fn claim_prize(
+        ctx: Context<ClaimPrize>,
+        bump_authority: u8,
+        bump_prize_token: u8,
+    ) -> Result<()> {
+        instructions::claim_prize::handler(ctx, bump_authority, bump_prize_token)
+    }
 }
 
 #[derive(Accounts)]

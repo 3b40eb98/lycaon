@@ -4,7 +4,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as anchor from '@project-serum/anchor';
 import { Program, BN } from '@project-serum/anchor';
-import { LAMPORTS_PER_SOL, PublicKey, SystemProgram } from '@solana/web3.js';
+import {
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  SYSVAR_SLOT_HASHES_PUBKEY,
+} from '@solana/web3.js';
 import { assert } from 'chai';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -146,6 +151,7 @@ describe('raffle', () => {
     console.log({
       vaultAuth: vaultAuth.toBase58(),
       vaultAuthBump,
+      prize_box: prizeBox.toBase58(),
     });
 
     await program.rpc.createRaffle(
@@ -163,7 +169,7 @@ describe('raffle', () => {
           entrants: entrants.publicKey,
           prizeTokenMint: prizeTokenMint.publicKey,
           prizeTokenAccount: prizeTokenMintAccount,
-          receiveTokenMint: tokenMint,
+          splTokenMint: tokenMint,
           prizeBox,
           authority: vaultAuth,
           vault,
@@ -535,5 +541,79 @@ describe('raffle', () => {
         'Only the raffle_manager of this raffle can pick a winner'
       );
     }
+  });
+
+  it('claim prize', async () => {
+    const {
+      entrants,
+      vault,
+      prizeTokenAccount: tokenAccount,
+      prizeTokenMint: prizeMint,
+      winners,
+    } = await program.account.raffle.fetch(raffleAcc);
+
+    console.log({
+      winners: winners.map((pb) => pb.toBase58()),
+    });
+
+    const [vaultAuth, vaultAuthBump] = await PublicKey.findProgramAddress(
+      [Buffer.from('vault'), vaultAddr.toBuffer()],
+      program.programId
+    );
+
+    console.log({
+      vault: vault.toBase58(),
+      vaultAddr: vaultAddr.toBase58(),
+      vaultAuth: vaultAuth.toBase58(),
+      vaultAuthBump,
+    });
+
+    const [prizeTokenAccount, prizeTokenBump] =
+      await PublicKey.findProgramAddress(
+        [
+          Buffer.from('token-seed'), // TODO - change to token-box
+          vault.toBuffer(),
+          prizeTokenMint.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+    const destination = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      prizeMint,
+      payer.publicKey
+    );
+
+    console.log({
+      destination: destination.toBase58(),
+      prizeTokenAccount: prizeTokenAccount.toBase58(),
+      prizeTokenMint: prizeTokenMint.publicKey.toBase58(),
+    });
+
+    await program.rpc.claimPrize(vaultAuthBump, prizeTokenBump, {
+      accounts: {
+        raffle: raffleAcc,
+        vault,
+        authority: vaultAuth,
+        destinationTokenAccount: destination,
+        tokenMint: prizeMint,
+        winner: payer.publicKey,
+        prizeTokenAccount,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      },
+      signers: [payer],
+    });
+
+    const winnerAccount = await prizeTokenMint.getAccountInfo(destination);
+
+    console.log({
+      winnerAccount,
+    });
+
+    assert.ok(Number(winnerAccount.amount) === 1);
   });
 });
