@@ -21,7 +21,13 @@ pub fn handler(ctx: Context<BuyTickets>, _bump_authority: u8, amount: u32) -> Re
   let raffle = &mut ctx.accounts.raffle;
   let tickets = &mut ctx.accounts.tickets;
   let total_raffle_price = amount * raffle.raffle_price as u32;
-  let mut entrants = ctx.accounts.entrants.load_mut()?;
+  let entrants = &mut ctx.accounts.entrants.load_mut()?;
+
+  let clock = Clock::get()?;
+
+  if raffle.end_date_timestamps < clock.unix_timestamp {
+    return Err(error!(ErrorCode::RaffleEnded));
+  }
 
   tickets.bump = *ctx.bumps.get("tickets").unwrap();
 
@@ -51,6 +57,8 @@ pub fn handler(ctx: Context<BuyTickets>, _bump_authority: u8, amount: u32) -> Re
 pub enum ErrorCode {
   #[msg("Invalid token account for this raffle")]
   InvalidTokenAccountProvided,
+  #[msg("You cant buy tickets for raffle that has ended")]
+  RaffleEnded,
 }
 
 #[derive(Accounts)]
@@ -96,7 +104,7 @@ pub struct BuyTickets<'info> {
   pub token_box: Box<Account<'info, TokenAccount>>,
 
   pub token_mint: Account<'info, Mint>,
-  #[account(mut, constraint = token_account.mint == raffle.receive_token_mint @ ErrorCode::InvalidTokenAccountProvided)]
+  #[account(mut, constraint = token_account.mint == raffle.spl_token_mint @ ErrorCode::InvalidTokenAccountProvided)]
   pub token_account: Box<Account<'info, TokenAccount>>,
 
   // Misc.
