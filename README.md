@@ -1,4 +1,4 @@
-### Lycaon 🐻‍❄️
+## Lycaon 🐻‍❄️
 
 A smart contract for making raffles on Solana Blockchain
 
