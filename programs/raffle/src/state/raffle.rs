@@ -39,7 +39,7 @@ pub struct Raffle {
 
   pub prize_token_mint: Pubkey,
   pub prize_token_account: Pubkey,
-  pub receive_token_mint: Pubkey,
+  pub spl_token_mint: Pubkey,
   pub start_date_timestamps: i64,
   pub end_date_timestamps: i64,
 }
