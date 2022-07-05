@@ -36,13 +36,23 @@
       "error",
       "ignorePackages",
       {
-        "ts": "never"
+        "ts": "never",
+        "tsx": "never"
       }
     ],
     "no-restricted-syntax": 0,
     "no-underscore-dangle": 0,
     "@typescript-eslint/no-misused-promises": 0,
-    "@typescript-eslint/interface-name-prefix": 0
+    "@typescript-eslint/interface-name-prefix": 0,
+    "react/function-component-definition": [
+      2,
+      {
+        "namedComponents": "arrow-function"
+      }
+    ],
+    "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx", ".tsx", ".ts"] }],
+    "react/react-in-jsx-scope": "off",
+    "react/require-default-props": "off"
     // "@typescript-eslint/no-floating-promises": "error"
   },
   "settings": {
