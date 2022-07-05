@@ -65,7 +65,7 @@ pub fn handler(
   vault.raffle_count += 1;
 
   // transfer prize to the vault
-  // TODO : make optional transfer of prize to vault in case it is wl raffle or something
+  // TODO : make optional transfer of prize to vault in case it is wl raffle or something and to support multiple winners
   token::transfer(ctx.accounts.transer_prize_to_vault(), 1)?;
 
   Ok(())
