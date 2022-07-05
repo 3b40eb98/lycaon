@@ -10,10 +10,6 @@ pub mod state;
 pub mod raffle {
     use super::*;
 
-    pub fn initialize(_ctx: Context<Initialize>) -> Result<()> {
-        Ok(())
-    }
-
     pub fn init_vault(ctx: Context<InitVault>) -> Result<()> {
         instructions::init_vault::handler(ctx)
     }
@@ -56,6 +52,3 @@ pub mod raffle {
         instructions::claim_prize::handler(ctx, bump_authority, bump_prize_token)
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}

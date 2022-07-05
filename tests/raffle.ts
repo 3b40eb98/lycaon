@@ -87,11 +87,6 @@ describe('raffle', () => {
     });
   });
 
-  it('Is initialized!', async () => {
-    const tx = await program.rpc.initialize({});
-    console.log('Your transaction signature', tx);
-  });
-
   it('Init vault', async () => {
     const [vault, vaultBump] = await PublicKey.findProgramAddress(
       [Buffer.from('vault-account'), payer.publicKey.toBuffer()],
