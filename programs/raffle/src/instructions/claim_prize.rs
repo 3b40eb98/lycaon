@@ -30,15 +30,6 @@ pub fn handler(ctx: Context<ClaimPrize>, _bump_authority: u8, _bump_prize_token:
   let raffle = &mut ctx.accounts.raffle;
   let vault = &ctx.accounts.vault;
 
-  let authority = &ctx.accounts.authority;
-
-  msg!(
-    "authority pubkey {}, bump {} and is_writable {}",
-    authority.key(),
-    _bump_authority,
-    ctx.accounts.destination_token_account.key(),
-  );
-
   if !raffle.winners.contains(&winner.key()) {
     return Err(error!(ErrorCode::InvalidWinner));
   }
