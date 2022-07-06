@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
   associated_token::AssociatedToken,
-  token::{self, Mint, Token, TokenAccount, Transfer},
+  token::{self, Mint, Token, TokenAccount, Transfer, CloseAccount},
 };
 
 use crate::state::*;
@@ -23,6 +23,16 @@ impl<'info> ClaimPrize<'info> {
     };
     CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
   }
+
+  fn close_prize_account(&self) -> CpiContext<'_, '_, '_, 'info, CloseAccount<'info>> {
+    let cpi_accounts = CloseAccount {
+      account: self.prize_token_account.to_account_info().clone(),
+      destination: self.destination_token_account.to_account_info().clone(),
+      authority: self.authority.to_account_info().clone()
+    };
+
+    CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+  }
 }
 
 pub fn handler(ctx: Context<ClaimPrize>, _bump_authority: u8, _bump_prize_token: u8) -> Result<()> {
@@ -39,6 +49,7 @@ pub fn handler(ctx: Context<ClaimPrize>, _bump_authority: u8, _bump_prize_token:
   let seeds = [VAULT_PDA_SEED, vault.authority_seed.as_ref(), &vault.authority_bump_seed];
 
   token::transfer(ctx.accounts.claim_prize().with_signer(&[&seeds]), 1)?;
+  token::close_account(ctx.accounts.close_prize_account().with_signer(&[&seeds]))?;
 
   Ok(())
 }
