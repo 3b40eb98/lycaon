@@ -8,7 +8,7 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
   SystemProgram,
-  SYSVAR_SLOT_HASHES_PUBKEY,
+  SYSVAR_SLOT_HISTORY_PUBKEY,
 } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
@@ -152,7 +152,7 @@ describe('raffle', () => {
     await program.rpc.createRaffle(
       vaultAuthBump,
       'Raffle 1',
-      new BN(1),
+      new BN(20),
       new BN(155),
       new BN(todayTimestamp),
       new BN(todayPlus5DaysTimeStamp),
@@ -514,17 +514,13 @@ describe('raffle', () => {
   it('pick winner', async () => {
     const raffleAccount = await program.account.raffle.fetch(raffleAcc);
 
-    const slotHashes = new anchor.web3.PublicKey(
-      'SysvarS1otHashes111111111111111111111111111'
-    );
-
     await program.rpc.pickWinners({
       accounts: {
         raffle: raffleAcc,
         entrants: raffleAccount.entrants,
         systemProgram: SystemProgram.programId,
         raffleManager: payer.publicKey,
-        slotHashes,
+        slotHashes: SYSVAR_SLOT_HISTORY_PUBKEY,
       },
       signers: [payer],
     });
