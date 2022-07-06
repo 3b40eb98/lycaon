@@ -61,6 +61,8 @@ pub fn handler(
   raffle.spl_token_mint = ctx.accounts.spl_token_mint.key();
   raffle.raffle_price = raffle_price;
   raffle.vault = vault.key();
+  raffle.locked = false;
+  raffle.ended = false;
 
   vault.raffle_count += 1;
 

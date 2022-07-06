@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 pub const MAX_ENTRANTS: u32 = 1000;
 pub const RAFFLE_ESCROW_PDA_SEED: &[u8] = b"raffle-escrow";
 
+// todo: improve these error msgs
 #[error_code]
 pub enum RaffleErrorCode {
   #[msg("No tickets available for this raffle")]
@@ -17,8 +18,18 @@ pub enum RaffleErrorCode {
   TotalWinnerExceedTotalEntrants,
   #[msg("Total winners has already been picked")]
   WinnersAlreadyPicked,
-  #[msg("Only the raffle_manager of this raffle can pick a winner")]
-  OnlyRaffleManagerCanPickWinner,
+  #[msg("Invalid raffle_manager for this raffle")]
+  InvalidRaffleManager,
+  #[msg("Raffle has ended")]
+  RaffleEnded,
+  #[msg("Invalid token account for this raffle")]
+  InvalidTokenAccountProvided,
+  #[msg("Raffle locked")]
+  RaffleLocked,
+  #[msg("Raffle not finished yet")]
+  RaffleNotFinishedYet,
+  #[msg("Raffle only can be finished after 48hours from the start")]
+  NoFinishRaffleBefore48H,
 }
 
 #[account]
@@ -33,6 +44,9 @@ pub struct Raffle {
   pub entrants: Pubkey,
 
   pub vault: Pubkey,
+
+  pub locked: bool,
+  pub ended: bool,
 
   pub winners: Vec<Pubkey>,
   pub total_winners: u32,

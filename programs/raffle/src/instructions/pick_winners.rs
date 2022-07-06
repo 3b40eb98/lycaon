@@ -10,6 +10,12 @@ pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
 
   let total_winners = raffle.total_winners as usize;
 
+  let clock = Clock::get()?;
+
+  if !raffle.ended && raffle.end_date_timestamps > clock.unix_timestamp {
+    return Err(error!(RaffleErrorCode::RaffleNotFinishedYet));
+  }
+
   if raffle.winners.len() >= total_winners {
     return Err(error!(RaffleErrorCode::WinnersAlreadyPicked));
   }
@@ -41,7 +47,7 @@ pub fn handler(ctx: Context<PickWinner>) -> Result<()> {
 #[derive(Accounts)]
 pub struct PickWinner<'info> {
   // raffle
-  #[account(mut, has_one = entrants, has_one = raffle_manager @ RaffleErrorCode::OnlyRaffleManagerCanPickWinner)]
+  #[account(mut, has_one = entrants, has_one = raffle_manager @ RaffleErrorCode::InvalidRaffleManager)]
   pub raffle: Box<Account<'info, Raffle>>,
   #[account(mut)]
   pub entrants: AccountLoader<'info, Entrants>,

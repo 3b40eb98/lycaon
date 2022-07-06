@@ -41,14 +41,24 @@ pub mod raffle {
     pub fn buy_tickets(ctx: Context<BuyTickets>, bump_authority: u8, amount: u32) -> Result<()> {
         instructions::buy_tickets::handler(ctx, bump_authority, amount)
     }
+
     pub fn pick_winners(ctx: Context<PickWinner>) -> Result<()> {
         instructions::pick_winners::handler(ctx)
     }
+
     pub fn claim_prize(
         ctx: Context<ClaimPrize>,
         bump_authority: u8,
         bump_prize_token: u8,
     ) -> Result<()> {
         instructions::claim_prize::handler(ctx, bump_authority, bump_prize_token)
+    }
+
+    pub fn lock_raffle(ctx: Context<LockRaffle>, locked: bool) -> Result<()> {
+        instructions::lock_raffle::handler(ctx, locked)
+    }
+
+    pub fn finish_raffle(ctx: Context<FinishRaffle>) -> Result<()> {
+        instructions::finish_raffle::handler(ctx)
     }
 }
