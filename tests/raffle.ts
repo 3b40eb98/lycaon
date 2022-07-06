@@ -42,11 +42,11 @@ describe('raffle', () => {
   let vaultAddr: PublicKey;
 
   const today = new Date();
-  const todayTimestamp = today.getTime();
+  const todayTimestamp = Math.round(today.getTime() / 1000 + 10);
 
   const todayPlus5Days = new Date();
   todayPlus5Days.setDate(todayPlus5Days.getDate() + 5);
-  const todayPlus5DaysTimeStamp = todayPlus5Days.getTime();
+  const todayPlus5DaysTimeStamp = Math.round(todayPlus5Days.getTime() / 1000);
 
   before('fund wallet', async () => {
     const bankFund = await program.provider.connection.requestAirdrop(
@@ -453,6 +453,44 @@ describe('raffle', () => {
     assert.equal(tickets.length, 2);
   });
 
+  it('Lock/unlock raffle', async () => {
+    await program.rpc.lockRaffle(false, {
+      accounts: {
+        raffle: raffleAcc,
+        raffleManager: payer.publicKey,
+        systemProgram: SystemProgram.programId,
+      },
+      signers: [payer],
+    });
+
+    const raffleAccount = await program.account.raffle.fetch(raffleAcc);
+
+    console.log({
+      raffleLocked: raffleAccount.locked,
+    });
+
+    assert.equal(raffleAccount.locked, false);
+  });
+
+  it('finish raffle', async () => {
+    await program.rpc.finishRaffle({
+      accounts: {
+        raffle: raffleAcc,
+        raffleManager: payer.publicKey,
+        systemProgram: SystemProgram.programId,
+      },
+      signers: [payer],
+    });
+
+    const raffleAccount = await program.account.raffle.fetch(raffleAcc);
+
+    console.log({
+      raffleFinish: raffleAccount.ended,
+    });
+
+    assert.equal(raffleAccount.ended, true);
+  });
+
   it('List all tickets of a wallet from raffle', async () => {
     const [ticketPDA, _] = await PublicKey.findProgramAddress(
       [
@@ -533,7 +571,7 @@ describe('raffle', () => {
     } catch ({ error }) {
       assert.equal(
         error.errorMessage,
-        'Only the raffle_manager of this raffle can pick a winner'
+        'Invalid raffle_manager for this raffle'
       );
     }
   });
