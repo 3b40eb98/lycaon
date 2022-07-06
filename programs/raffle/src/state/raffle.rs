@@ -30,6 +30,8 @@ pub enum RaffleErrorCode {
   RaffleNotFinishedYet,
   #[msg("Raffle only can be finished after 48hours from the start")]
   NoFinishRaffleBefore48H,
+  #[msg("You cannot buy more tickets than allowed for this raffle")]
+  MoreEntriesThanAllowed,
 }
 
 #[account]

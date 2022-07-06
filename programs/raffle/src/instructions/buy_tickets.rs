@@ -33,6 +33,10 @@ pub fn handler(ctx: Context<BuyTickets>, _bump_authority: u8, amount: u32) -> Re
     return Err(error!(RaffleErrorCode::RaffleEnded));
   }
 
+  if amount > raffle.max_entries_per_wallet {
+    return Err(error!(RaffleErrorCode::MoreEntriesThanAllowed));
+  }
+
   tickets.bump = *ctx.bumps.get("tickets").unwrap();
 
   tickets.amount = if tickets.amount > 0 {
