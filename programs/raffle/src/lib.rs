@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use instructions::*;
 
-declare_id!("wph5h6ezsZajS4w2Pu4AKr5gpxNgjtEnjUZaX9BTf4z");
+declare_id!("GFe7k4SGs25xJ3QH9ktpZyZRaFEGTd97qx4kmE1YsSvL");
 
 pub mod instructions;
 pub mod state;
