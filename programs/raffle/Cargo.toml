@@ -17,6 +17,6 @@ default = []
 init-if-needed = []
 
 [dependencies]
-anchor-lang = {version = "0.24.2", features = ["init-if-needed"]}
-anchor-spl = "0.24.2"
+anchor-lang = {version = "0.25.0", features = ["init-if-needed"]}
+anchor-spl = "0.25.0"
 spl-token = {version = "3.3.0", features = ["no-entrypoint"]}
