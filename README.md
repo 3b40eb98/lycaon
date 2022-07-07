@@ -1,6 +1,6 @@
 ## Lycaon 🐻‍❄️
 
-A smart contract for making raffles on Solana Blockchain
+A solana raffle program
 
 #### 🚨 _THIS CODE IS NOT AUDITED USE AT YOUR OWN RISK_
 
