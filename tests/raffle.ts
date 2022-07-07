@@ -229,7 +229,7 @@ describe('raffle', () => {
       entrantsPDA: entrants.toBase58(),
     });
 
-    await program.rpc.buyTickets(vaultAuthBump, new BN(1), {
+    await program.rpc.buyTickets(vaultAuthBump, 1, {
       accounts: {
         entrants,
         vault: vaultAddr,
@@ -258,7 +258,7 @@ describe('raffle', () => {
       await program.provider.connection.getTokenAccountBalance(tokenBox)
     );
 
-    await program.rpc.buyTickets(vaultAuthBump, new BN(5), {
+    await program.rpc.buyTickets(vaultAuthBump, 5, {
       accounts: {
         entrants,
         vault: vaultAddr,
@@ -334,7 +334,7 @@ describe('raffle', () => {
       program.programId
     );
 
-    await program.rpc.buyTickets(vaultAuthBump, new BN(2), {
+    await program.rpc.buyTickets(vaultAuthBump, 2, {
       accounts: {
         entrants,
         vault: vaultAddr,
@@ -415,7 +415,7 @@ describe('raffle', () => {
     });
 
     try {
-      await program.rpc.buyTickets(vaultAuthBump, new BN(1), {
+      await program.rpc.buyTickets(vaultAuthBump, 1, {
         accounts: {
           entrants,
           vault: vaultAddr,
