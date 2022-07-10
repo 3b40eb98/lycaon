@@ -645,4 +645,75 @@ describe('raffle', () => {
 
     assert.ok(Number(winnerAccount.amount) === 1);
   });
+
+  it('claim proceeds', async () => {
+    const {
+      entrants,
+      vault,
+      prizeTokenAccount: tokenAccount,
+      prizeTokenMint: prizeMint,
+      winners,
+    } = await program.account.raffle.fetch(raffleAcc);
+
+    console.log({
+      winners: winners.map((pb) => pb.toBase58()),
+    });
+
+    const [vaultAuth, vaultAuthBump] = await PublicKey.findProgramAddress(
+      [Buffer.from('vault'), vaultAddr.toBuffer()],
+      program.programId
+    );
+
+    console.log({
+      vault: vault.toBase58(),
+      vaultAddr: vaultAddr.toBase58(),
+      vaultAuth: vaultAuth.toBase58(),
+      vaultAuthBump,
+    });
+
+    const [proceedsToken, proceedsTokenBump] =
+      await PublicKey.findProgramAddress(
+        [
+          Buffer.from('token-seed'), // TODO - change to token-box
+          vault.toBuffer(),
+          tokenMint.toBuffer(),
+        ],
+        program.programId
+      );
+
+    const destination = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenMint,
+      payer.publicKey
+    );
+
+    console.log({
+      destination: destination.toBase58(),
+      proceedsToken: proceedsToken.toBase58(),
+      tokenMint: tokenMint.toBase58(),
+    });
+
+    await program.rpc.claimProceeds(vaultAuthBump, proceedsTokenBump, {
+      accounts: {
+        raffle: raffleAcc,
+        vault,
+        authority: vaultAuth,
+        destinationTokenAccount: destination,
+        tokenMint,
+        raffleManager: payer.publicKey,
+        proceedsTokenAccount: proceedsToken,
+        entrants,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      },
+      signers: [payer],
+    });
+
+    const raffleManagerAccount = await token.getAccountInfo(destination);
+
+    assert.ok(Number(raffleManagerAccount.amount) === 10040);
+  });
 });

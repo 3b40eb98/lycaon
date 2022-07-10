@@ -54,6 +54,14 @@ pub mod raffle {
         instructions::claim_prize::handler(ctx, bump_authority, bump_prize_token)
     }
 
+    pub fn claim_proceeds(
+        ctx: Context<ClaimProceeds>,
+        bump_authority: u8,
+        bump_proceeds_token: u8,
+    ) -> Result<()> {
+        instructions::claim_proceeds::handler(ctx, bump_authority, bump_proceeds_token)
+    }
+
     pub fn lock_raffle(ctx: Context<LockRaffle>, locked: bool) -> Result<()> {
         instructions::lock_raffle::handler(ctx, locked)
     }
